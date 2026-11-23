@@ -34,6 +34,7 @@ pidgenx_instances = 0
 
 [api]
 require_auth = true
+public_check = false
 keys_file = "api_keys.json"
 
 [catalog]

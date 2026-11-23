@@ -1,0 +1,20 @@
+# Keep build context small and free of secrets / runtime state.
+target/
+.git/
+.github/
+.idea/
+.vscode/
+*.key
+.env
+.env.*
+*.local.toml
+api_keys.json
+api_keys.json.tmp
+blocked.redb
+pidkeychecker.lock
+pidkeychecker.owner
+results-*.csv
+sample.txt
+pidgenx.dll
+docs/img/
+deploy/*.local

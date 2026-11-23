@@ -87,6 +87,80 @@ API keys are opaque tokens (`pkc_` + 256 random bits). Only their SHA-256 hash i
 
 **Rate limiting** uses GCRA (a token bucket) per API key, or per IP when no key is sent. Every response carries `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset` and `RateLimit-Policy`; a rejected request gets `429` with `Retry-After`. Each key can have its own limit.
 
+With `require_auth = true` and `public_check = true`, the user-level endpoints above (check, errors, blocklist lookup) accept requests without a key, while admin endpoints still require an admin key. `/health` reports `auth_required` and `public_check` so clients know whether to ask for a key. Internal errors are logged server-side and returned only as `internal server error`. The access log never contains the request line, so product keys sent in `GET /check/{key}` are not written to logs.
+
+## Web UI
+
+`pkc serve` also serves a small browser front end at `/` (files in `web/`: `index.html`, `app.css`, `app.js`, `favicon.svg`). It has no external dependencies and runs under a strict Content-Security-Policy (`default-src 'none'`; scripts, styles and images from the same origin only).
+
+- Single and batch checks (paste any text; keys are found automatically). `Ctrl` / `⌘` + `Enter` submits; a running check shows its elapsed time and can be cancelled.
+- Filter cards (all / valid / blocked / invalid), status badges, MAK remaining count, expand / collapse all, copy a key or Product ID, copy all results as TSV, or export CSV (UTF-8 with BOM, opens in Excel).
+- API key field with show / hide and an optional *remember on this device* (stored in `localStorage` only); hidden when the server runs with `public_check = true`.
+- Light and dark theme (follows the system, toggle is remembered), connection status with periodic health checks and a retry button, mobile-friendly layout.
+
+The files are embedded into the binary with `include_str!`, so **after editing anything in `web/` you must rebuild `pkc`** (`cargo build --release --no-default-features --bin pkc`) and redeploy it.
+
+## Linux VPS deployment (port 8675)
+
+`pkc` builds and runs on Linux without the GUI. **Legacy Vista / 7 / Office 2010 keys are not supported on Linux**: they can only be validated by Windows' `pidgenx.dll`, so those keys are reported as `unsupported`. Windows 8+ / Office 2013+ keys and MAK lookups work normally.
+
+### One-click install (systemd)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/zijin-c/PIDChecker/main/deploy/install.sh | sudo bash
+```
+
+The script downloads the prebuilt `pkc-linux-x64.tar.gz` / `pkc-linux-arm64.tar.gz` from the latest GitHub release (checksum verified). If there is no release yet, or the binary does not run on the system, it installs the build dependencies (`pkg-config`, `libssl-dev`, `build-essential`, `rustup`) and compiles `cargo build --release --locked --no-default-features --bin pkc` from source, adding a temporary swap file on machines with less than 2 GiB of memory. It then:
+
+- installs `/opt/pidchecker/pkc` and `/opt/pidchecker/data`, and creates the `pidchecker` system user;
+- writes `/var/lib/pidchecker/config.toml` (port 8675, `pidgenx_enabled = false`, `auto_sync = false`);
+- creates an admin key and a browser (user) key, saved with mode `0600` to `/root/pidchecker-admin.key` and `/root/pidchecker-browser.key`;
+- installs the hardened `pidchecker.service` and runs `systemctl enable --now`;
+- opens the port in `ufw` / `firewalld` if one is active, runs a health check, and prints the URL, the keys and common commands.
+
+Options are environment variables placed after `sudo`:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `PORT` | `8675` | listen port |
+| `HOST` | `0.0.0.0` | bind address (`127.0.0.1` automatically when `DOMAIN` is set) |
+| `DOMAIN` | | domain (or public IP) for automatic HTTPS with Caddy |
+| `PUBLIC_CHECK` | `false` | let anyone check keys without an API key |
+| `ONLINE_CHECK` | `true` | query Microsoft for MAK counts by default |
+| `REPO` / `VERSION` / `BRANCH` | `zijin-c/PIDChecker` / `latest` / `main` | where to get the release or source |
+| `BUILD_FROM_SOURCE` | `0` | `1` = always compile |
+| `RECONFIGURE` | `0` | `1` = back up and regenerate `config.toml` |
+| `OPEN_FIREWALL` | `1` | `0` = do not touch `ufw` / `firewalld` |
+
+```bash
+# Public checks without an API key
+curl -fsSL https://raw.githubusercontent.com/zijin-c/PIDChecker/main/deploy/install.sh | sudo PUBLIC_CHECK=true bash
+
+# HTTPS on a domain: pkc binds 127.0.0.1:8675, Caddy serves 80/443 (pidchecker-https.service)
+curl -fsSL https://raw.githubusercontent.com/zijin-c/PIDChecker/main/deploy/install.sh | sudo DOMAIN=pkc.example.com bash
+
+# From a local checkout
+sudo ./deploy/install.sh
+```
+
+Re-running the script upgrades the binary and data and keeps the existing configuration, API keys and blocked-key database. Through Caddy only the Web UI, `/api/v1/health` and the check endpoints are public; admin endpoints are reachable from the server itself (`http://127.0.0.1:8675/api/v1/...`). Remember to allow the port (8675, or 80/443 with `DOMAIN`) in your cloud provider's security group as well.
+
+```bash
+systemctl status pidchecker          # state
+journalctl -u pidchecker -f          # logs
+sudo nano /var/lib/pidchecker/config.toml && sudo systemctl restart pidchecker
+```
+
+### Docker
+
+```bash
+git clone https://github.com/zijin-c/PIDChecker.git && cd PIDChecker
+docker compose up -d --build                    # http://<server-ip>:8675/
+docker compose logs pidchecker | grep -A1 "API key"   # first-run admin and browser keys
+```
+
+The image builds `pkc` with `--no-default-features`, listens on 8675, stores its config, API keys (`admin.key`, `browser.key`) and blocked-key database in the `pidchecker-data` volume (`/var/lib/pidchecker`), and has a health check. Set `PUBLIC_CHECK=true`, `ONLINE_CHECK=false` or `PIDCHECKER_PORT=9000` in the environment or an `.env` file before `docker compose up`; they apply when the config is first created.
+
 ## Configuration (`config.toml`)
 
 | Section | Key | Default | Meaning |
@@ -105,6 +179,7 @@ API keys are opaque tokens (`pkc_` + 256 random bits). Only their SHA-256 hash i
 | checker | blocklist_db | blocked.redb | blocked-keys database |
 | checker | pidgenx_path, pidgenx_instances | pidgenx.dll, 0 | legacy backend (0 = one instance per CPU core) |
 | api | require_auth, keys_file | true, api_keys.json | |
+| api | public_check | false | allow check / error-code / blocklist-read calls without an API key (admin endpoints still need one) |
 | catalog | auto_sync, url, interval_hours | true, GitHub `data/`, 24 | pkeyconfig catalog updates (see below) |
 | app | check_updates | true | check GitHub for a newer release a few seconds after the GUI starts |
 
@@ -145,7 +220,7 @@ Or with cargo directly:
 cargo build --release                                       # native
 cargo xwin build --release --target x86_64-pc-windows-msvc  # Windows x64 from macOS/Linux
 cargo xwin build --release --target aarch64-pc-windows-msvc # Windows ARM64
-cargo build --release --no-default-features                 # headless (no GUI)
+cargo build --release --no-default-features --bin pkc       # headless server only (Linux / VPS)
 cargo test
 ```
 

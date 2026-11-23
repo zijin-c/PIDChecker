@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0a0f1a">
+  <meta name="description" content="识别 Microsoft 产品密钥的产品、版本与授权渠道，并可查询 MAK 剩余激活次数。">
+  <meta name="referrer" content="no-referrer">
+  <title>PID Checker · 产品密钥检测</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#keys">跳到密钥输入</a>
+  <noscript>
+    <div class="noscript">此页面需要启用 JavaScript 才能检测密钥。你也可以直接调用 REST API：<code>POST /api/v1/check</code>。</div>
+  </noscript>
+
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="/" aria-label="PID Checker 首页">
+        <svg class="brand-icon" viewBox="0 0 32 32" width="34" height="34" aria-hidden="true" focusable="false">
+          <defs>
+            <linearGradient id="brand-grad" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#9fe3ff"/>
+              <stop offset=".55" stop-color="#6aa8ff"/>
+              <stop offset="1" stop-color="#7c6cff"/>
+            </linearGradient>
+          </defs>
+          <path d="M16 1.8 4.2 6.2v8.6c0 7.4 5 13.6 11.8 15.6 6.8-2 11.8-8.2 11.8-15.6V6.2z" fill="url(#brand-grad)"/>
+          <circle cx="12.6" cy="14" r="3.7" fill="none" stroke="#0b1626" stroke-width="2.2"/>
+          <path d="M15.4 16.6 22 23.2M19.2 20.4l2-2M21.2 22.4l1.6-1.6" fill="none" stroke="#0b1626" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+        <span class="brand-text"><strong>PID Checker</strong><small>产品密钥检测</small></span>
+      </a>
+      <div class="top-actions">
+        <span id="server-status" class="server-status" data-state="pending" role="status"><span class="dot" aria-hidden="true"></span><span id="server-status-text">正在连接</span></span>
+        <button id="retry" class="chip-button" type="button" hidden>重试连接</button>
+        <button id="theme-toggle" class="icon-button" type="button" aria-label="切换到亮色主题" title="切换主题">
+          <svg class="icon icon-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+          <svg class="icon icon-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.2 14.6A8.4 8.4 0 0 1 9.4 3.8a8.4 8.4 0 1 0 10.8 10.8z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap" id="main">
+    <section class="intro">
+      <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>离线校验 · 封禁库 · MAK 在线查询</p>
+      <h1>产品密钥检测</h1>
+      <p>识别 Microsoft 产品、版本和授权渠道，按需查询 MAK 剩余激活次数。</p>
+    </section>
+
+    <div class="workspace">
+      <section class="panel input-panel" aria-labelledby="input-title">
+        <div class="panel-title"><h2 id="input-title">输入密钥</h2><span class="mono muted" id="limit"></span></div>
+        <form id="check-form" autocomplete="off" novalidate>
+          <div class="mode" aria-label="检测方式" role="group">
+            <button type="button" data-mode="single" aria-pressed="true">单条检测</button>
+            <button type="button" data-mode="batch" aria-pressed="false">批量检测</button>
+          </div>
+          <label for="keys" id="key-label">产品密钥</label>
+          <textarea id="keys" rows="4" maxlength="50000" spellcheck="false" autocapitalize="characters" autocorrect="off" aria-describedby="input-hint" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"></textarea>
+          <div class="input-meta"><span id="input-hint">输入 25 位产品密钥。</span><button id="clear" type="button" class="text-button">清空</button></div>
+          <div id="paste-hint" class="inline-hint" role="status" hidden>
+            <span id="paste-hint-text">检测到多条密钥。</span>
+            <button id="switch-batch" type="button" class="chip-button">切换到批量模式</button>
+          </div>
+          <div class="submit-row">
+            <label class="check"><input id="online" type="checkbox"><span>查询 MAK 激活次数</span></label>
+            <div class="submit-actions">
+              <button id="cancel" class="secondary" type="button" hidden>取消检测</button>
+              <button id="submit" class="primary" type="submit" disabled aria-keyshortcuts="Control+Enter Meta+Enter">
+                <span>开始检测</span><kbd id="kbd-hint" class="kbd">Ctrl ↵</kbd>
+              </button>
+            </div>
+          </div>
+          <div id="progress" class="progress" hidden>
+            <div class="progress-track" aria-hidden="true"><span></span></div>
+            <div class="progress-meta"><span id="progress-text">正在检测…</span><span id="elapsed" class="mono">0.0 s</span></div>
+          </div>
+          <p id="notice" class="notice" role="alert" hidden><span id="notice-text"></span> <button id="notice-retry" type="button" class="text-button" hidden>重试</button></p>
+          <p id="info" class="info" role="status" hidden></p>
+        </form>
+      </section>
+
+      <aside class="panel info-panel" aria-labelledby="service-title">
+        <div class="panel-title">
+          <h2 id="service-title">服务设置</h2>
+          <svg class="icon panel-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+        </div>
+        <div id="auth-area" class="auth-area" hidden>
+          <label for="token">API 密钥</label>
+          <div class="field-action">
+            <input id="token" type="password" placeholder="pkc_…" autocomplete="off" spellcheck="false" autocapitalize="off">
+            <button id="toggle-token" class="icon-button" type="button" aria-pressed="false" aria-label="显示 API 密钥" title="显示 / 隐藏">
+              <svg class="icon icon-eye" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="icon icon-eye-off" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 3l18 18M10.6 5.6A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a16 16 0 0 1-3 3.7M6.6 6.6C4 8.3 2.5 12 2.5 12S6 18.5 12 18.5a9 9 0 0 0 4.4-1.1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+            </button>
+          </div>
+          <label class="check"><input id="remember" type="checkbox"><span>记住此设备</span></label>
+          <p class="hint">勾选后 API 密钥仅保存在本浏览器的本地存储中；公共电脑请勿勾选。</p>
+        </div>
+        <p id="public-note" class="pill-note" hidden>此服务已开放公开检测，无需 API 密钥。</p>
+        <dl class="service-info">
+          <div><dt>产品目录</dt><dd id="catalog">—</dd></div>
+          <div><dt>封禁库</dt><dd id="blocklist">—</dd></div>
+          <div><dt>旧版密钥检测</dt><dd id="legacy">—</dd></div>
+          <div><dt>服务版本</dt><dd id="version" class="mono">—</dd></div>
+        </dl>
+        <p class="hint">开启 MAK 查询后，符合条件的检测数据会发送至 Microsoft 激活服务。</p>
+      </aside>
+    </div>
+
+    <section class="panel results" id="results" aria-labelledby="results-title" aria-busy="false">
+      <div class="panel-title"><h2 id="results-title">检测结果</h2><p class="mono muted" id="summary" aria-live="polite"></p></div>
+      <div id="result-tools" class="result-tools" hidden>
+        <div class="filters" role="group" aria-label="按状态筛选结果">
+          <button type="button" class="filter" data-filter="all" aria-pressed="true"><span>全部</span><strong id="count-all">0</strong></button>
+          <button type="button" class="filter" data-filter="valid" aria-pressed="false"><span>有效</span><strong id="count-valid">0</strong></button>
+          <button type="button" class="filter" data-filter="blocked" aria-pressed="false"><span>封禁</span><strong id="count-blocked">0</strong></button>
+          <button type="button" class="filter" data-filter="invalid" aria-pressed="false"><span>无效</span><strong id="count-invalid">0</strong></button>
+        </div>
+        <div class="tool-row">
+          <button id="expand-all" type="button" class="ghost">展开全部</button>
+          <button id="collapse-all" type="button" class="ghost">折叠全部</button>
+          <button id="copy-all" type="button" class="ghost" title="复制当前筛选结果为制表符分隔文本，可直接粘贴到表格">复制全部 (TSV)</button>
+          <button id="export-csv" type="button" class="ghost" title="导出当前筛选结果为 CSV（UTF-8，Excel 可直接打开）">导出 CSV</button>
+        </div>
+      </div>
+      <div class="empty" id="empty">
+        <svg class="icon empty-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5"/></svg>
+        <p id="empty-text">提交密钥后，结果会显示在这里</p>
+      </div>
+      <div id="reports"></div>
+      <p id="filter-empty" class="filter-empty" hidden>当前筛选条件下没有结果。</p>
+    </section>
+  </main>
+
+  <footer class="wrap footer">
+    <span>PID Checker <span id="footer-version"></span></span>
+    <span>密钥仅在本服务器处理，不会被记录到访问日志。</span>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

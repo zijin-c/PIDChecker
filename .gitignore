@@ -3,6 +3,7 @@
 # Runtime state (contains API key hashes and the blocked-key database)
 api_keys.json
 api_keys.json.tmp
+.pidchecker-browser.key
 blocked.redb
 results-*.csv
 # Test material provided locally
@@ -10,3 +11,9 @@ sample.txt
 pidkeychecker.lock
 pidkeychecker.owner
 .idea
+# Secrets and local overrides
+*.key
+.env
+.env.*
+*.local.toml
+/deploy/*.local

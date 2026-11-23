@@ -111,12 +111,15 @@ impl Default for RateLimitConfig {
 pub struct ApiConfig {
     /// Require an API key (`Authorization: Bearer ...` or `X-API-Key`).
     pub require_auth: bool,
+    /// Allow unauthenticated access to check/errors/blocklist-read endpoints
+    /// while still requiring an admin API key for management endpoints.
+    pub public_check: bool,
     pub keys_file: PathBuf,
 }
 
 impl Default for ApiConfig {
     fn default() -> Self {
-        Self { require_auth: true, keys_file: "api_keys.json".into() }
+        Self { require_auth: true, public_check: false, keys_file: "api_keys.json".into() }
     }
 }
 

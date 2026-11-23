@@ -44,6 +44,7 @@ pub struct AppState {
     pub checker: Arc<Checker>,
     pub keys: Arc<ApiKeyStore>,
     pub require_auth: bool,
+    pub public_check: bool,
     pub max_batch: usize,
     pub max_blocklist_batch: usize,
     pub rate_limit: crate::config::RateLimitConfig,
@@ -73,7 +74,8 @@ fn err(status: StatusCode, msg: impl Into<String>) -> ApiError {
 }
 
 fn internal(e: impl std::fmt::Display) -> ApiError {
-    err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    tracing::error!("internal server error: {e}");
+    err(StatusCode::INTERNAL_SERVER_ERROR, "internal server error")
 }
 
 // ---------------------------------------------------------------------------
@@ -90,7 +92,7 @@ fn token(req: &HttpRequest) -> Option<&str> {
         .map(str::trim)
 }
 
-fn authenticate(req: &HttpRequest) -> Result<Option<ApiKey>, ApiError> {
+fn authenticate(req: &HttpRequest, allow_public: bool) -> Result<Option<ApiKey>, ApiError> {
     let st = req.app_data::<web::Data<AppState>>().ok_or_else(|| internal("state missing"))?;
     match token(req) {
         Some(t) => st
@@ -98,30 +100,31 @@ fn authenticate(req: &HttpRequest) -> Result<Option<ApiKey>, ApiError> {
             .authenticate(t)
             .map(Some)
             .ok_or_else(|| err(StatusCode::UNAUTHORIZED, "invalid, revoked or expired API key")),
-        None if st.require_auth => Err(err(StatusCode::UNAUTHORIZED, "missing API key")),
-        None => Ok(None),
+        None if !st.require_auth => Ok(None),
+        None if allow_public && st.public_check => Ok(None),
+        None => Err(err(StatusCode::UNAUTHORIZED, "missing API key")),
     }
 }
 
-/// Any authenticated caller (or anyone when auth is disabled).
+/// Any authenticated caller (or anyone when auth is disabled or `public_check` is enabled).
 pub struct User(#[allow(dead_code)] Option<ApiKey>);
 
 impl FromRequest for User {
     type Error = ApiError;
     type Future = Ready<Result<Self, ApiError>>;
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
-        ready(authenticate(req).map(User))
+        ready(authenticate(req, true).map(User))
     }
 }
 
-/// Caller holding an admin key (or anyone when auth is disabled).
+/// Caller holding an admin key (always required when `require_auth` is enabled).
 pub struct Admin(#[allow(dead_code)] Option<ApiKey>);
 
 impl FromRequest for Admin {
     type Error = ApiError;
     type Future = Ready<Result<Self, ApiError>>;
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
-        ready(authenticate(req).and_then(|k| match k {
+        ready(authenticate(req, false).and_then(|k| match k {
             Some(k) if k.role == Role::Admin => Ok(Admin(Some(k))),
             None => Ok(Admin(None)),
             Some(_) => Err(err(StatusCode::FORBIDDEN, "admin API key required")),
@@ -142,7 +145,8 @@ async fn rate_limit(
         return next.call(req).await.map(|r| r.map_into_left_body());
     };
     let cfg = &st.rate_limit;
-    if !cfg.enabled || req.path().ends_with("/health") {
+    // Only rate-limit API endpoints (excluding health checks), never static browser assets.
+    if !cfg.enabled || !req.path().starts_with("/api/v1/") || req.path().ends_with("/health") {
         return next.call(req).await.map(|r| r.map_into_left_body());
     }
     // Identify the client: API key (with optional per-key quota) or IP address.
@@ -232,7 +236,8 @@ async fn health(st: Data) -> HttpResponse {
         "blocklist": st.checker.blocklist().len(),
         "legacy_keys_supported": st.checker.legacy_supported(),
         "max_batch_size": st.max_batch,
-        "auth_required": st.require_auth,
+        "auth_required": st.require_auth && !st.public_check,
+        "public_check": st.require_auth && st.public_check,
     }))
 }
 
@@ -392,6 +397,18 @@ async fn keys_delete(st: Data, _a: Admin, id: web::Path<String>) -> Result<HttpR
 }
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
+    cfg.service(web::resource("/").route(web::get().to(|| async {
+        browser_asset("text/html; charset=utf-8", include_str!("../web/index.html"))
+    })))
+    .service(web::resource("/app.css").route(web::get().to(|| async {
+        browser_asset("text/css; charset=utf-8", include_str!("../web/app.css"))
+    })))
+    .service(web::resource("/app.js").route(web::get().to(|| async {
+        browser_asset("text/javascript; charset=utf-8", include_str!("../web/app.js"))
+    })))
+    .service(web::resource("/favicon.svg").route(web::get().to(|| async {
+        browser_asset("image/svg+xml; charset=utf-8", include_str!("../web/favicon.svg"))
+    })));
     cfg.service(
         web::scope("/api/v1")
             .service(health)
@@ -412,6 +429,28 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(keys_ratelimit)
             .service(keys_delete),
     );
+}
+
+/// Replace path segments that may carry a product key with a placeholder.
+fn redact_path(path: &str) -> String {
+    for prefix in ["/api/v1/check/", "/api/v1/blocklist/"] {
+        if let Some(rest) = path.strip_prefix(prefix) {
+            if !rest.is_empty() && rest != "batch" && rest != "remove" {
+                return format!("{prefix}{{key}}");
+            }
+        }
+    }
+    path.to_string()
+}
+
+fn browser_asset(content_type: &'static str, content: &'static str) -> HttpResponse {
+    HttpResponse::Ok()
+        .content_type(content_type)
+        .insert_header(("Cache-Control", "no-cache"))
+        .insert_header(("X-Content-Type-Options", "nosniff"))
+        .insert_header(("Referrer-Policy", "no-referrer"))
+        .insert_header(("Content-Security-Policy", "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"))
+        .body(content)
 }
 
 // ---------------------------------------------------------------------------
@@ -440,6 +479,7 @@ pub fn spawn(cfg: &Config, checker: Arc<Checker>, keys: Arc<ApiKeyStore>) -> Res
         checker,
         keys: keys.clone(),
         require_auth: cfg.api.require_auth,
+        public_check: cfg.api.public_check,
         max_batch: cfg.checker.max_batch_size,
         max_blocklist_batch: cfg.checker.max_blocklist_batch,
         rate_limit: cfg.rate_limit.clone(),
@@ -471,9 +511,15 @@ pub fn spawn(cfg: &Config, checker: Arc<Checker>, keys: Arc<ApiKeyStore>) -> Res
                         )
                         .into()
                     }))
+                    .wrap(actix_web::middleware::DefaultHeaders::new().add(("X-Content-Type-Options", "nosniff")))
                     .wrap(actix_web::middleware::from_fn(rate_limit))
                     .wrap(cors_layer)
-                    .wrap(actix_web::middleware::Logger::new("%a \"%r\" %s %Dms"))
+                    // Never log the raw request line (%r / %U): product keys travel in
+                    // GET /api/v1/check/{key} and /blocklist/{key}. Log a redacted route instead.
+                    .wrap(
+                        actix_web::middleware::Logger::new("%a \"%{route}xi\" %s %b %Dms")
+                            .custom_request_replace("route", |req| format!("{} {}", req.method(), redact_path(req.path()))),
+                    )
                     .configure(configure)
             })
             .disable_signals()

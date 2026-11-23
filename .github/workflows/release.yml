@@ -6,6 +6,11 @@
 # with SHA-256 checksums. Both targets are built on the x64 Windows runner; the
 # MSVC ARM64 toolchain ships with Visual Studio there. The C runtime is linked
 # statically (.cargo/config.toml), so no VC++ redistributable is required.
+#
+# It also produces headless Linux server packages pkc-linux-x64.tar.gz and
+# pkc-linux-arm64.tar.gz (pkc + data/ + deploy/), which deploy/install.sh
+# downloads. They are built on Ubuntu 22.04 (glibc 2.35) with OpenSSL linked
+# statically, so they run on Ubuntu 22.04+, Debian 12+, RHEL 9+ and similar.
 
 name: Release
 
@@ -131,9 +136,73 @@ jobs:
             ${{ steps.package.outputs.zip }}.sha256
           if-no-files-found: error
 
+  linux:
+    name: Build ${{ matrix.name }}
+    needs: test
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x64
+            runner: ubuntu-22.04
+            machine: x86-64
+          - name: linux-arm64
+            runner: ubuntu-22.04-arm
+            machine: aarch64
+    env:
+      OPENSSL_STATIC: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - name: Install build dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends pkg-config libssl-dev
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.name }}
+
+      - name: Build pkc (headless)
+        run: cargo build --release --locked --no-default-features --bin pkc
+
+      - name: Verify binary
+        run: |
+          file target/release/pkc
+          file target/release/pkc | grep -qi '${{ matrix.machine }}'
+          if ldd target/release/pkc | grep -E 'libssl|libcrypto'; then echo "OpenSSL must be linked statically"; exit 1; fi
+          target/release/pkc --version
+          out="$(target/release/pkc check --offline W269N-WFGWX-YVC9B-4J6C9-T83GX)"
+          echo "$out"
+          echo "$out" | grep -Eq 'Key Status\s+: Valid'
+
+      - name: Package
+        id: package
+        run: |
+          name="pkc-${{ matrix.name }}"
+          out="target/dist/$name"
+          mkdir -p "$out/deploy"
+          install -m 0755 target/release/pkc "$out/pkc"
+          cp -a data "$out/data"
+          cp README.md "$out/"
+          cp deploy/install.sh deploy/pidchecker.service deploy/pidchecker-https.service deploy/Caddyfile "$out/deploy/"
+          chmod 0755 "$out/deploy/install.sh"
+          tar -C target/dist -czf "target/dist/$name.tar.gz" "$name"
+          (cd target/dist && sha256sum "$name.tar.gz" > "$name.tar.gz.sha256")
+          echo "tar=target/dist/$name.tar.gz" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.name }}
+          path: |
+            ${{ steps.package.outputs.tar }}
+            ${{ steps.package.outputs.tar }}.sha256
+          if-no-files-found: error
+
   release:
     name: Publish release
-    needs: build
+    needs: [build, linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -150,6 +219,7 @@ jobs:
           generate_release_notes: true
           files: |
             dist/*.zip
+            dist/*.tar.gz
             dist/*.sha256
           body: |
             Windows 10 / 11 builds. Download the zip for your CPU and extract it:
@@ -158,5 +228,13 @@ jobs:
             |---|---|
             | `*-win-x64.zip` | Intel / AMD 64-bit PCs |
             | `*-win-arm64.zip` | ARM64 PCs (Snapdragon, Parallels on Apple Silicon) |
+            | `pkc-linux-x64.tar.gz` | Linux servers, x86-64 (headless `pkc` + Web UI) |
+            | `pkc-linux-arm64.tar.gz` | Linux servers, ARM64 (headless `pkc` + Web UI) |
 
             Run `pidkeychecker.exe` for the desktop app, or `pkc.exe serve` for the headless REST API. See README.md for details.
+
+            Linux VPS one-click install (port 8675):
+
+            ```
+            curl -fsSL https://raw.githubusercontent.com/zijin-c/PIDChecker/main/deploy/install.sh | sudo bash
+            ```

@@ -232,7 +232,7 @@ fn serve(config: Config) -> Result<()> {
         );
         let handle = server::spawn(&services.config, services.checker.clone(), services.keys.clone())?;
         let sync = catalog::spawn_auto_sync(services.checker.clone(), &services.config.catalog);
-        tokio::signal::ctrl_c().await?;
+        shutdown_signal().await?;
         if let Some(t) = sync {
             t.abort();
         }
@@ -240,6 +240,23 @@ fn serve(config: Config) -> Result<()> {
         handle.stop().await;
         Ok(())
     })
+}
+
+async fn shutdown_signal() -> Result<()> {
+    #[cfg(unix)]
+    {
+        use tokio::signal::unix::{signal, SignalKind};
+        let mut term = signal(SignalKind::terminate())?;
+        tokio::select! {
+            res = tokio::signal::ctrl_c() => { res?; }
+            _ = term.recv() => {}
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        tokio::signal::ctrl_c().await?;
+    }
+    Ok(())
 }
 
 fn status(config: &Config) -> Result<()> {

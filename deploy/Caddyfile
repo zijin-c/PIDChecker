@@ -1,0 +1,52 @@
+# HTTPS gateway for PID Checker, installed by deploy/install.sh when DOMAIN is set.
+# Values come from /etc/pidchecker/https.env (see pidchecker-https.service):
+#   PIDCHECKER_HOST          domain name (or public IP) to serve
+#   PIDCHECKER_PORT          local pkc port (default 8675)
+#   PIDCHECKER_ACME_PROFILE  classic, or shortlived for IP-address certificates
+#
+# Only the Web UI, the health check and the check endpoints are exposed publicly.
+# Admin endpoints (blocklist / apikeys) stay reachable on 127.0.0.1 only.
+{
+	admin off
+	default_sni {$PIDCHECKER_HOST}
+}
+
+{$PIDCHECKER_HOST} {
+	tls {
+		issuer acme https://acme-v02.api.letsencrypt.org/directory {
+			profile {$PIDCHECKER_ACME_PROFILE:classic}
+		}
+	}
+
+	encode zstd gzip
+
+	request_body {
+		max_size 1MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		-Server
+	}
+
+	@pages {
+		method GET HEAD
+		path / /app.css /app.js /favicon.svg /api/v1/health
+	}
+	@checks {
+		method POST
+		path /api/v1/check /api/v1/check/batch
+	}
+	handle @pages {
+		reverse_proxy 127.0.0.1:{$PIDCHECKER_PORT:8675}
+	}
+	handle @checks {
+		header Cache-Control "no-store"
+		reverse_proxy 127.0.0.1:{$PIDCHECKER_PORT:8675}
+	}
+	handle {
+		respond 404
+	}
+}

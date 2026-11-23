@@ -1,0 +1,36 @@
+# docker compose up -d --build
+# Web UI: http://<server-ip>:8675/   First-run API keys: docker compose logs pidchecker
+services:
+  pidchecker:
+    build: .
+    image: pidchecker:latest
+    container_name: pidchecker
+    restart: unless-stopped
+    ports:
+      - "${PIDCHECKER_PORT:-8675}:8675"
+    environment:
+      PORT: "8675"
+      PUBLIC_CHECK: "${PUBLIC_CHECK:-false}"
+      ONLINE_CHECK: "${ONLINE_CHECK:-true}"
+      TRUST_PROXY_HEADERS: "${TRUST_PROXY_HEADERS:-false}"
+      RUST_LOG: info
+    volumes:
+      - pidchecker-data:/var/lib/pidchecker
+    stop_signal: SIGINT
+    stop_grace_period: 15s
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "/opt/pidchecker/pkc", "-c", "/var/lib/pidchecker/config.toml", "--log-level", "error", "status"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  pidchecker-data:
