@@ -39,5 +39,5 @@ keys_file = "api_keys.json"
 
 [catalog]
 auto_sync = true
-url = "https://raw.githubusercontent.com/ja7ad/PIDChecker/main/data"
+url = "https://raw.githubusercontent.com/zijin-c/PIDChecker/main/data"
 interval_hours = 24

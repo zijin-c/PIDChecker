@@ -5,6 +5,131 @@
 # but missing from this catalog are still loaded, after all listed ones.
 
 [[product]]
+name = "Office 2024 / 2021 / 2019 / 2016 / 365 (latest)"
+category = "Office"
+dir = "office/2024-latest"
+
+[[product]]
+name = "Windows 10 1607 / Server 2016 (14393)"
+category = "Windows Server"
+dir = "windows-server/2016"
+
+[[product]]
+name = "Windows 10 1709 / Server 1709 (16299)"
+category = "Windows"
+dir = "windows/10/16299"
+
+[[product]]
+name = "Windows 10 1809 / Server 2019 (17763)"
+category = "Windows Server"
+dir = "windows-server/2019"
+
+[[product]]
+name = "Azure Stack HCI 20H2 (17784)"
+category = "Windows Server"
+dir = "windows-server/hci-20h2"
+
+[[product]]
+name = "Windows 10 1903-1909 / Server 1903-1909 (18363)"
+category = "Windows"
+dir = "windows/10/18363"
+
+[[product]]
+name = "Windows 11 24H2-26H2 / Server 2025 / Azure Local"
+category = "Windows Server"
+dir = "windows-server/2025"
+
+[[product]]
+name = "Windows 11 22H2 / 23H2 (22631)"
+category = "Windows"
+dir = "windows/11-23h2"
+
+[[product]]
+name = "Windows 10 2004-22H2 / Server 2004-20H2 (19045)"
+category = "Windows"
+dir = "windows/10/19045"
+
+[[product]]
+name = "Windows Server 23H2 / Azure Stack HCI 23H2"
+category = "Windows Server"
+dir = "windows-server/23h2"
+
+[[product]]
+name = "Advanced Threat Analytics 1.4+"
+category = "Server Apps"
+dir = "server-apps/advanced-threat-analytics"
+
+[[product]]
+name = "Dynamics 365 Server v9"
+category = "Server Apps"
+dir = "server-apps/dynamics-365-v9"
+
+[[product]]
+name = "Dynamics CRM Server 2016"
+category = "Server Apps"
+dir = "server-apps/dynamics-crm-2016"
+
+[[product]]
+name = "Dynamics CRM 2016 / Dynamics 365 v8"
+category = "Server Apps"
+dir = "server-apps/dynamics-365-v8"
+
+[[product]]
+name = "Exchange Server 2019"
+category = "Server Apps"
+dir = "server-apps/exchange-2019"
+
+[[product]]
+name = "Office for Mac 2011"
+category = "Office"
+dir = "office/mac-2011"
+
+[[product]]
+name = "Office for Mac 2016-2024 / 365"
+category = "Office"
+dir = "office/mac-latest"
+
+[[product]]
+name = "SharePoint Server 2019"
+category = "Server Apps"
+dir = "server-apps/sharepoint-2019"
+
+[[product]]
+name = "SharePoint Server Subscription Edition"
+category = "Server Apps"
+dir = "server-apps/sharepoint-se"
+
+[[product]]
+name = "SQL Server 2019"
+category = "Server Apps"
+dir = "server-apps/sql-server-2019"
+
+[[product]]
+name = "SQL Server 2022"
+category = "Server Apps"
+dir = "server-apps/sql-server-2022"
+
+[[product]]
+name = "SQL Server 2025"
+category = "Server Apps"
+dir = "server-apps/sql-server-2025"
+
+[[product]]
+name = "Visual Studio 2019"
+category = "Visual Studio"
+dir = "visual-studio/2019"
+
+[[product]]
+name = "Visual Studio 2022"
+category = "Visual Studio"
+dir = "visual-studio/2022"
+
+[[product]]
+name = "Visual Studio 2026"
+category = "Visual Studio"
+dir = "visual-studio/2026"
+
+[[product]]
 name = "Windows 11 / 10 (latest)"
 category = "Windows"
 dir = "windows/11"
@@ -398,3 +523,308 @@ dir = "windows-insider/8-consumer-preview"
 name = "Windows 8 Developer Preview"
 category = "Windows Insider"
 dir = "windows-insider/8-developer-preview"
+
+[[product]]
+name = ".NET Micro Framework Porting Kit v3.0"
+category = ".NET Micro Framework"
+dir = "other/net-micro-framework-net-micro-framework-porting-kit-v3-0"
+
+[[product]]
+name = "AutoCollage 2008 Academic v1.1"
+category = "AutoCollage"
+dir = "other/autocollage-autocollage-2008-academic-v1-1"
+
+[[product]]
+name = "Research Automatic Graph Layout"
+category = "Automatic Graph Layout"
+dir = "other/automatic-graph-layout-research-automatic-graph-layout"
+
+[[product]]
+name = "AutoRoute 2010 - Volume"
+category = "AutoRoute"
+dir = "other/autoroute-autoroute-2010-volume"
+
+[[product]]
+name = "AutoRoute 2011 - Retail - Volume"
+category = "AutoRoute"
+dir = "other/autoroute-autoroute-2011-retail-volume"
+
+[[product]]
+name = "AutoRoute 2013 - Retail - Volume"
+category = "AutoRoute"
+dir = "other/autoroute-autoroute-2013-retail-volume"
+
+[[product]]
+name = "7601 - Windows Embedded POSReady 7"
+category = "Embedded"
+dir = "other/embedded-7601-windows-embedded-posready-7"
+
+[[product]]
+name = "7601 - Windows Embedded Standard 7"
+category = "Embedded"
+dir = "other/embedded-7601-windows-embedded-standard-7"
+
+[[product]]
+name = "7601 - Windows Embedded Standard 7 Toolkit"
+category = "Embedded"
+dir = "other/embedded-7601-windows-embedded-standard-7-toolkit"
+
+[[product]]
+name = "Windows Embedded Compact 2013"
+category = "Embedded Compact"
+dir = "other/embedded-compact-windows-embedded-compact-2013"
+
+[[product]]
+name = "Windows Embedded Compact 7"
+category = "Embedded Compact"
+dir = "other/embedded-compact-windows-embedded-compact-7"
+
+[[product]]
+name = "Expression Studio 1"
+category = "Expression"
+dir = "other/expression-expression-studio-1"
+
+[[product]]
+name = "Expression Studio 2"
+category = "Expression"
+dir = "other/expression-expression-studio-2"
+
+[[product]]
+name = "Expression Studio 3"
+category = "Expression"
+dir = "other/expression-expression-studio-3"
+
+[[product]]
+name = "Expression Studio 4"
+category = "Expression"
+dir = "other/expression-expression-studio-4"
+
+[[product]]
+name = "Flight Simulator X"
+category = "Flight Simulator"
+dir = "other/flight-simulator-flight-simulator-x"
+
+[[product]]
+name = "MapPoint 2009 Europe - Volume"
+category = "MapPoint"
+dir = "other/mappoint-mappoint-2009-europe-volume"
+
+[[product]]
+name = "MapPoint 2009 North America - Volume"
+category = "MapPoint"
+dir = "other/mappoint-mappoint-2009-north-america-volume"
+
+[[product]]
+name = "MapPoint 2010 Europe - Volume"
+category = "MapPoint"
+dir = "other/mappoint-mappoint-2010-europe-volume"
+
+[[product]]
+name = "MapPoint 2010 North America - Volume"
+category = "MapPoint"
+dir = "other/mappoint-mappoint-2010-north-america-volume"
+
+[[product]]
+name = "MapPoint 2011 Europe - Volume"
+category = "MapPoint"
+dir = "other/mappoint-mappoint-2011-europe-volume"
+
+[[product]]
+name = "MapPoint 2011 North America - Volume"
+category = "MapPoint"
+dir = "other/mappoint-mappoint-2011-north-america-volume"
+
+[[product]]
+name = "14.0.4417.1000 - Beta - Office 2010"
+category = "Office"
+dir = "windows-insider/pkm-14-0-4417-1000-beta-office-2010"
+
+[[product]]
+name = "15.0.4025.1000 - Beta - Office 2013"
+category = "Office"
+dir = "windows-insider/pkm-15-0-4025-1000-beta-office-2013"
+
+[[product]]
+name = "Office 2013-O365"
+category = "Office"
+dir = "other/office-office-2013-o365"
+
+[[product]]
+name = "Songsmith Academic 1.03"
+category = "Songsmith"
+dir = "other/songsmith-songsmith-academic-1-03"
+
+[[product]]
+name = "Streets and Trips 2008 - Retail"
+category = "Streets and Trips"
+dir = "other/streets-and-trips-streets-and-trips-2008-retail"
+
+[[product]]
+name = "Streets and Trips 2008 - Volume"
+category = "Streets and Trips"
+dir = "other/streets-and-trips-streets-and-trips-2008-volume"
+
+[[product]]
+name = "Streets and Trips 2009 - Volume"
+category = "Streets and Trips"
+dir = "other/streets-and-trips-streets-and-trips-2009-volume"
+
+[[product]]
+name = "Streets and Trips 2010 - Volume"
+category = "Streets and Trips"
+dir = "other/streets-and-trips-streets-and-trips-2010-volume"
+
+[[product]]
+name = "Streets and Trips 2011 - Retail"
+category = "Streets and Trips"
+dir = "other/streets-and-trips-streets-and-trips-2011-retail"
+
+[[product]]
+name = "Streets and Trips 2011 - Volume"
+category = "Streets and Trips"
+dir = "other/streets-and-trips-streets-and-trips-2011-volume"
+
+[[product]]
+name = "Visual Studio 2012 RC"
+category = "Visual Studio"
+dir = "windows-insider/pkm-visual-studio-2012-rc"
+
+[[product]]
+name = "Visual Studio 2013 RC"
+category = "Visual Studio"
+dir = "windows-insider/pkm-visual-studio-2013-rc"
+
+[[product]]
+name = "Visual Studio 2015 Preview 2"
+category = "Visual Studio"
+dir = "windows-insider/pkm-visual-studio-2015-preview-2"
+
+[[product]]
+name = "29531 - Beta - Csvlk - Windows 11"
+category = "Windows Insider"
+dir = "windows-insider/pkm-29531-beta-csvlk-windows-11"
+
+[[product]]
+name = "8032 - Beta - Csvlk - Windows 8"
+category = "Windows Insider"
+dir = "windows-insider/pkm-8032-beta-csvlk-windows-8"
+
+[[product]]
+name = "8288 - Beta - Csvlk - Windows 8"
+category = "Windows Insider"
+dir = "windows-insider/pkm-8288-beta-csvlk-windows-8"
+
+[[product]]
+name = "17000 - Beta - Windows 10"
+category = "Windows Insider"
+dir = "windows-insider/pkm-17000-beta-windows-10"
+
+[[product]]
+name = "29531 - Beta - Windows 11"
+category = "Windows Insider"
+dir = "windows-insider/pkm-29531-beta-windows-11"
+
+[[product]]
+name = "5098 - Beta - Windows Vista"
+category = "Windows Insider"
+dir = "windows-insider/pkm-5098-beta-windows-vista"
+
+[[product]]
+name = "5231 - Beta - Windows Vista"
+category = "Windows Insider"
+dir = "windows-insider/pkm-5231-beta-windows-vista"
+
+[[product]]
+name = "5308 - Beta - Windows Vista"
+category = "Windows Insider"
+dir = "windows-insider/pkm-5308-beta-windows-vista"
+
+[[product]]
+name = "5356 - Beta - Windows Vista"
+category = "Windows Insider"
+dir = "windows-insider/pkm-5356-beta-windows-vista"
+
+[[product]]
+name = "5757 - Beta - Windows Vista"
+category = "Windows Insider"
+dir = "windows-insider/pkm-5757-beta-windows-vista"
+
+[[product]]
+name = "6519 - Beta - Windows 7"
+category = "Windows Insider"
+dir = "windows-insider/pkm-6519-beta-windows-7"
+
+[[product]]
+name = "6574 - Beta - Windows 7"
+category = "Windows Insider"
+dir = "windows-insider/pkm-6574-beta-windows-7"
+
+[[product]]
+name = "6926 - Beta - Windows 7"
+category = "Windows Insider"
+dir = "windows-insider/pkm-6926-beta-windows-7"
+
+[[product]]
+name = "6936 - Beta - Windows 7"
+category = "Windows Insider"
+dir = "windows-insider/pkm-6936-beta-windows-7"
+
+[[product]]
+name = "7262 - Beta - Windows 7"
+category = "Windows Insider"
+dir = "windows-insider/pkm-7262-beta-windows-7"
+
+[[product]]
+name = "7887 - Beta - Windows 8"
+category = "Windows Insider"
+dir = "windows-insider/pkm-7887-beta-windows-8"
+
+[[product]]
+name = "8019 - Beta - Windows 8"
+category = "Windows Insider"
+dir = "windows-insider/pkm-8019-beta-windows-8"
+
+[[product]]
+name = "8288 - Beta - Windows 8"
+category = "Windows Insider"
+dir = "windows-insider/pkm-8288-beta-windows-8"
+
+[[product]]
+name = "9385 - Beta - Windows 8.1"
+category = "Windows Insider"
+dir = "windows-insider/pkm-9385-beta-windows-8-1"
+
+[[product]]
+name = "10240 - Csvlk - Windows 10 1507"
+category = "Windows - Server"
+dir = "other/windows-server-10240-csvlk-windows-10-1507"
+
+[[product]]
+name = "17134 - Csvlk - Windows 10 1803 - Server 1803"
+category = "Windows - Server"
+dir = "other/windows-server-17134-csvlk-windows-10-1803-server-1803"
+
+[[product]]
+name = "9200 - Csvlk - Windows 8 - Server 2012"
+category = "Windows - Server"
+dir = "other/windows-server-9200-csvlk-windows-8-server-2012"
+
+[[product]]
+name = "9600 - Csvlk - Windows 8.1 - Server 2012 R2"
+category = "Windows - Server"
+dir = "other/windows-server-9600-csvlk-windows-8-1-server-2012-r2"
+
+[[product]]
+name = "7601 - Windows 7 - Server 2008 R2"
+category = "Windows - Server"
+dir = "other/windows-server-7601-windows-7-server-2008-r2"
+
+[[product]]
+name = "9200 - Windows 8 - Server 2012"
+category = "Windows - Server"
+dir = "other/windows-server-9200-windows-8-server-2012"
+
+[[product]]
+name = "9600 - Windows 8.1 - Server 2012 R2"
+category = "Windows - Server"
+dir = "other/windows-server-9600-windows-8-1-server-2012-r2"
